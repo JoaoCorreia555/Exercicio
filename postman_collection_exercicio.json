@@ -1,0 +1,296 @@
+{
+  "info": {
+    "_postman_id": "b6d9d4b8-6f4c-4a8e-9f3a-123456789abc",
+    "name": "Exercicio API - Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Coleção para testar a API de Clients e Login (JWT) do projeto Exercicio"
+  },
+  "item": [
+    {
+      "name": "Login - obter JWT",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"user\",\n  \"password\": \"password\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "login"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    var json = pm.response.json();",
+              "    if (json.token) {",
+              "        // salvar token como collection variable para não depender de environment selecionado",
+              "        pm.collectionVariables.set('token', json.token);",
+              "        pm.test('Token salvo em collection variable', function () { pm.expect(json.token).to.be.a('string'); });",
+              "    } else {",
+              "        pm.test('Resposta não contém token', function () { pm.expect.fail('no token'); });",
+              "    }",
+              "} else {",
+              "    pm.test('Login falhou', function () { pm.expect.fail('Login status: ' + pm.response.code); });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create Client",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Maria\",\n  \"lastName\": \"Silva\",\n  \"taxIdentifier\": \"TAX999\",\n  \"email\": \"maria.silva@example.com\",\n  \"phoneNumber\": \"+351912345678\",\n  \"documents\": [\n    {\n      \"type\": \"passport\",\n      \"number\": \"P1234567\",\n      \"description\": \"Passaporte\",\n      \"expirationDate\": \"2028-05-01\"\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/clients",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "clients"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Pré-request: garante que token está definido e adiciona header Authorization (usa collection variable)",
+              "const token = pm.collectionVariables.get('token');",
+              "if (!token) {",
+              "    throw new Error('Token não definido. Execute o request Login para obter um token.');",
+              "}",
+              "pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + token });"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 201) {",
+              "    var body = pm.response.json();",
+              "    if (body && body.id) {",
+              "        pm.collectionVariables.set('lastClientId', body.id);",
+              "        pm.test('lastClientId salvo', function () { pm.expect(body.id).to.exist; });",
+              "    }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get All Clients",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/clients",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "clients"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const token = pm.collectionVariables.get('token');",
+              "if (!token) {",
+              "    throw new Error('Token não definido. Execute o request Login para obter um token.');",
+              "}",
+              "pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + token });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Client By Id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/clients/{{lastClientId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "clients",
+            "{{lastClientId}}"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const token = pm.collectionVariables.get('token');",
+              "if (!token) {",
+              "    throw new Error('Token não definido. Execute o request Login para obter um token.');",
+              "}",
+              "const id = pm.collectionVariables.get('lastClientId');",
+              "if (!id) {",
+              "    throw new Error('lastClientId não definido. Execute Create Client antes.');",
+              "}",
+              "pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + token });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update Client",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Maria Updated\",\n  \"lastName\": \"Silva\",\n  \"taxIdentifier\": \"TAX999\",\n  \"email\": \"maria.updated@example.com\",\n  \"phoneNumber\": \"+351912345679\",\n  \"documents\": [\n    {\n      \"type\": \"passport\",\n      \"number\": \"P1234567\",\n      \"description\": \"Passaporte atualizado\",\n      \"expirationDate\": \"2029-01-01\"\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/clients/{{lastClientId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "clients",
+            "{{lastClientId}}"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const token = pm.collectionVariables.get('token');",
+              "if (!token) {",
+              "    throw new Error('Token não definido. Execute o request Login para obter um token.');",
+              "}",
+              "const id = pm.collectionVariables.get('lastClientId');",
+              "if (!id) {",
+              "    throw new Error('lastClientId não definido. Execute Create Client antes.');",
+              "}",
+              "pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + token });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Delete Client",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/clients/{{lastClientId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "clients",
+            "{{lastClientId}}"
+          ]
+        }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const token = pm.collectionVariables.get('token');",
+              "if (!token) {",
+              "    throw new Error('Token não definido. Execute o request Login para obter um token.');",
+              "}",
+              "const id = pm.collectionVariables.get('lastClientId');",
+              "if (!id) {",
+              "    throw new Error('lastClientId não definido. Execute Create Client antes.');",
+              "}",
+              "pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + token });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "lastClientId",
+      "value": ""
+    }
+  ]
+}
