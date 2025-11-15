@@ -35,6 +35,8 @@ public class AuthController {
             return ResponseEntity.ok(new AuthResponse(token));
         } catch (AuthenticationException ex) {
             return ResponseEntity.status(401).build();
+        } catch (Exception ex) {
+            return ResponseEntity.status(500).build();
         }
     }
 }
